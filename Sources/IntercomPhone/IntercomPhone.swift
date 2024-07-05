@@ -11,7 +11,9 @@ import WatchConnectivity
 import UIKit
 
 public class IntercomPhone<T: IntercomContext>: NSObject, ObservableObject, WCSessionDelegate, Intercom {
-        
+    
+    @Published public var receivedContext: T?
+    
     public var sessionActivated: Bool = false
     public var encoder: JSONEncoder = JSONEncoder()
     public var decoder: JSONDecoder = JSONDecoder()
@@ -58,8 +60,7 @@ public class IntercomPhone<T: IntercomContext>: NSObject, ObservableObject, WCSe
             self.sessionActivated = true
         }
         print("⌚️ Phone Comms : activation completed, status \(activationState.rawValue), error: \(error?.localizedDescription ?? "nil")")
-//        try? send(context: PhoneAppContext(navigating: false))
-//        _ = try? self.decode(context: session.receivedApplicationContext)
+        receivedContext = try? self.decode(context: session.receivedApplicationContext)
     }
     
     public func session(_ session: WCSession, didReceiveMessage message: [String : Any], replyHandler: @escaping ([String : Any]) -> Void) {
@@ -89,7 +90,7 @@ public class IntercomPhone<T: IntercomContext>: NSObject, ObservableObject, WCSe
     }
     
     public func session(_ session: WCSession, didReceiveApplicationContext applicationContext: [String : Any]) {
-//        _ = try? decode(context: applicationContext)
+        receivedContext = try? decode(context: applicationContext)
     }
     
     public func sessionDidBecomeInactive(_ session: WCSession) {

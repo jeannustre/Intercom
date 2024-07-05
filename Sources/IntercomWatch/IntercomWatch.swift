@@ -5,10 +5,9 @@ import WatchKit
 
 public class IntercomWatch<T: IntercomContext>: NSObject, ObservableObject, WCSessionDelegate, Intercom {
     
+    @Published public var receivedContext: T?
     public var session: WCSession
-    @Published public var phoneContext: T?
-    
-    var activated: Bool = false
+    public var activated: Bool = false
     public var encoder: JSONEncoder = JSONEncoder()
     public var decoder: JSONDecoder = JSONDecoder()
     
@@ -25,10 +24,6 @@ public class IntercomWatch<T: IntercomContext>: NSObject, ObservableObject, WCSe
         session.delegate = self
         session.activate()
     }
-    
-//    public func updateApplicationContext() {
-//        session.receivedApplicationContext
-//    }
     
     public func askIfPhoneIsShowingControl(completion: @escaping (Bool?, IntercomWatchError?)->Void) {
         let message: [String:Any] = [
@@ -52,42 +47,6 @@ public class IntercomWatch<T: IntercomContext>: NSObject, ObservableObject, WCSe
             completion(nil, .textualError(error.localizedDescription))
         })
     }
-//
-//    public func readJWTFromContext(completion: @escaping (String?, String?)->Void) {
-//
-//    }
-    
-//    public func requestJWTFromPhone(completion: @escaping (String?, String?)->Void) {
-//        if !activated {
-//            shouldRequestJWTWhenActivating = true
-//            requestJWTCompletionHandler = completion
-//            return
-//        }
-//        session.sendMessage(["command":"jwt"], replyHandler: { response in
-//            if let accessToken = response["access"] as? String,
-//               let refreshToken = response["refresh"] as? String {
-//                completion(accessToken, refreshToken)
-//            } else {
-//                completion(nil, nil)
-//            }
-//        }, errorHandler: { error in
-//            completion(nil, error.localizedDescription)
-//        })
-//    }
-    
-    /// Decode a `PhoneAppContext` received from the phone.
-//    private func decodeReceivedContext(context: [String:Any]) throws -> T? {
-//        guard let data = appContext["context"] as? Data else {
-//            print("????????? No context")
-//            return nil
-//        }
-//        guard let context = try? decoder.decode(T.self, from: data) else {
-//            print("????????????? Couldn't decode context")
-//            return nil
-//        }
-//        print("Decoded received context: \(context)")
-//        return context
-//    }
     
     @MainActor
     public func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: Error?) {
@@ -99,7 +58,7 @@ public class IntercomWatch<T: IntercomContext>: NSObject, ObservableObject, WCSe
             break
         case .activated:
             DispatchQueue.main.async {
-                // self.phoneContext = self.decodeReceivedContext(session.receivedApplicationContext) ?? .init(navigating: false)
+                self.receivedContext = try? self.decode(context: session.receivedApplicationContext)
                 self.activated = true
             }
         @unknown default:
@@ -135,12 +94,7 @@ public class IntercomWatch<T: IntercomContext>: NSObject, ObservableObject, WCSe
     public func session(_ session: WCSession, didReceiveApplicationContext applicationContext: [String : Any]) {
         print("Received application context: \(applicationContext)")
         DispatchQueue.main.async {
-            do {
-                let context: T = try self.decode(context: session.receivedApplicationContext)
-                self.phoneContext = context
-            } catch {
-                print()
-            }
+            self.receivedContext = try? self.decode(context: session.receivedApplicationContext)
         }
     }
     
