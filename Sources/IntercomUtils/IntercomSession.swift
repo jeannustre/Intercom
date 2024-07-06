@@ -10,7 +10,7 @@ import WatchConnectivity
 public class IntercomSession: NSObject, WCSessionDelegate {
     
     weak public var delegate: Delegate?
-    public var session: WCSession = .default
+    public let session: WCSession = .default
     public var canSend: Bool = false
     public var canReceive: Bool = false
     public var reachable: Bool = false
@@ -18,9 +18,8 @@ public class IntercomSession: NSObject, WCSessionDelegate {
     public var encoder: JSONEncoder = JSONEncoder()
     public var decoder: JSONDecoder = JSONDecoder()
     
-    public init(delegate: Delegate? = nil, session: WCSession) {
+    public init(delegate: Delegate? = nil) {
         self.delegate = delegate
-        self.session = session
         super.init()
     }
     

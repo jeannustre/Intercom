@@ -23,14 +23,26 @@ public extension IntercomSession {
                                     errorHandler: errorHandler)
     }
     
-    func send(command: IntercomCommand, replyHandler: (([String:Any])->Void)? = nil, errorHandler: ((Error)->Void)? = nil) throws {
+    func send(command: IntercomCommand, replyHandler: (([String:Any])->Void)? = nil, errorHandler: ((any Error)->Void)? = nil) throws {
         guard session.activationState == .activated else {
             throw IntercomError.sessionNotActivated
         }
-        try session.sendMessage(
-            [IntercomKey.command.rawValue: command.rawValue],
-            replyHandler: replyHandler,
-            errorHandler: errorHandler
-        )
+        do {
+            try session.sendMessage(
+                [
+                    IntercomKey.command.rawValue: command.name(),
+                    IntercomKey.parameters.rawValue: command.parameters()
+                ],
+                replyHandler: { response in
+                    replyHandler?(response)
+                },
+                errorHandler: { error in
+                    errorHandler?(error)
+                }
+            )
+        } catch {
+            print(error)
+        }
+        
     }
 }

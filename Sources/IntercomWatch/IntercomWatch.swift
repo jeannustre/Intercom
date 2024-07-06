@@ -12,7 +12,7 @@ public class IntercomWatch<T: IntercomContext>: ObservableObject, Intercom {
     public var encoder: JSONEncoder = JSONEncoder()
     public var decoder: JSONDecoder = JSONDecoder()
     
-    public var session: IntercomSession = IntercomSession(session: .default)
+    public var session: IntercomSession = IntercomSession()
     
     public init() {
         
@@ -48,14 +48,18 @@ public class IntercomWatch<T: IntercomContext>: ObservableObject, Intercom {
 
     public func perform(command: IntercomCommand) {
         switch command {
-        case .playSuccess:
+        case IntercomCommand.playSuccess:
             WKInterfaceDevice.current().play(.success)
             print("BZZZ")
-        case .requestContextUpdate:
+        case IntercomCommand.requestContextUpdate:
             // The phone asked the watch app to send its context.
 //            if let deviceContext {
 //                try? send(context: deviceContext)
 //            }
+            break
+        case IntercomCommand.custom(let name):
+            break
+        default:
             break
         }
     }

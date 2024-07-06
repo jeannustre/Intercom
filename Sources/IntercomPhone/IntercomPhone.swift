@@ -18,10 +18,23 @@ public class IntercomPhone<T: IntercomContext>: ObservableObject, Intercom {
     public var sessionActivated: Bool = false
     public var encoder: JSONEncoder = JSONEncoder()
     public var decoder: JSONDecoder = JSONDecoder()
-    public var session: IntercomSession = IntercomSession(session: .default)
+    public var session: IntercomSession = IntercomSession()
+    
+    
+    public typealias CommandHandler = ([String:Any]) -> Void
+    
+    var commandHandlers: [String:CommandHandler] = [:]
     
     public  init() {
         
+    }
+    
+    public func registerCommandHandler(name: String, handler: @escaping CommandHandler) {
+        commandHandlers[name] = handler
+    }
+    
+    public func removeCommandHandler(name: String) {
+        commandHandlers.removeValue(forKey: name)
     }
     
     public func activate() {
@@ -36,6 +49,10 @@ public class IntercomPhone<T: IntercomContext>: ObservableObject, Intercom {
 //            feedbackGenerator.notificationOccurred(.success)
         case .requestContextUpdate:
             break //TODO: should gather and re-send context from here
+        case .custom(let name, let parameters):
+            if let handler = commandHandlers[name] {
+                handler(parameters)
+            }
         }
     }
     
