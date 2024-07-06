@@ -10,94 +10,73 @@ import Foundation
 import WatchConnectivity
 import UIKit
 
-public class IntercomPhone<T: IntercomContext>: NSObject, ObservableObject, WCSessionDelegate, Intercom {
+public class IntercomPhone<T: IntercomContext>: ObservableObject, Intercom {
     
     @Published public var receivedContext: T?
+    @Published public var reachable: Bool = false
     
     public var sessionActivated: Bool = false
     public var encoder: JSONEncoder = JSONEncoder()
     public var decoder: JSONDecoder = JSONDecoder()
+    public var session: IntercomSession = IntercomSession(session: .default)
     
-    public var session: WCSession
-    
-    private init(session: WCSession) {
-        self.session = session
-        super.init()
-    }
-    
-    public override convenience init() {
-        self.init(session: .default)
+    public  init() {
+        
     }
     
     public func activate() {
-        guard WCSession.isSupported() else { return }
         session.delegate = self
         session.activate()
     }
     
-    public func updateComplicationsOnWatch() {
-        guard session.activationState == .activated else {
-            print("Tried to update complications on watch while session not active")
-            return
-        }
-        print("Complication updates remaining: \(session.remainingComplicationUserInfoTransfers)")
-        if session.isComplicationEnabled {
-            session.transferCurrentComplicationUserInfo()
-        }
-    }
-    
-//    private func sendJWT(replyHandler: @escaping ([String : Any]) -> Void) {
-//        let currentAuth = APIService.shared.authenticationAdapter.authorization
-//        let result: [String:Any] = ["access": currentAuth?.accessToken as Any,
-//                                    "refresh": currentAuth?.refreshToken as Any]
-//        replyHandler(result)
-//    }
-    
-    
-    
-    public func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: Error?) {
-        if activationState == .activated {
-            self.sessionActivated = true
-        }
-        print("⌚️ Phone Comms : activation completed, status \(activationState.rawValue), error: \(error?.localizedDescription ?? "nil")")
-        receivedContext = try? self.decode(context: session.receivedApplicationContext)
-    }
-    
-    public func session(_ session: WCSession, didReceiveMessage message: [String : Any], replyHandler: @escaping ([String : Any]) -> Void) {
-        print("WATCHPHONE: received message with replyHandler: \(message)")
-        
-        if let command = message["command"] as? String {
-            switch command {
-            case "getNavigating":
-                if true {
-                    print("Sending navigating")
-                    // DispatchQueue.main.async { might be warranted here depending on what u do in this function.
-                    replyHandler(["navigating": true])
-                    // }
-                } else {
-                    print("Error finding or encoding control data")
-                    replyHandler(["error": "Could not encode controlData on device, might be missing"])
-                }
-            default:
-                print("Unhandled command: \(command)")
-                break
-            }
+    public func perform(command: IntercomCommand) {
+        switch command {
+        case .playSuccess:
+            break
+//            feedbackGenerator.notificationOccurred(.success)
+        case .requestContextUpdate:
+            break //TODO: should gather and re-send context from here
         }
     }
     
-    public func session(_ session: WCSession, didReceiveMessage message: [String : Any]) {
-        print("WATCHPHONE: received message: \(message)")
+    public func send<E>(context: E) throws where E : Encodable {
+        try session.send(context: context)
     }
     
-    public func session(_ session: WCSession, didReceiveApplicationContext applicationContext: [String : Any]) {
-        receivedContext = try? decode(context: applicationContext)
+    public func send(command: IntercomUtils.IntercomCommand, replyHandler: (([String : Any]) -> Void)? = nil, errorHandler: ((any Error) -> Void)? = nil) throws {
+        try session.send(command: command, replyHandler: replyHandler, errorHandler: errorHandler)
     }
     
-    public func sessionDidBecomeInactive(_ session: WCSession) {
+}
+
+extension IntercomPhone: IntercomSession.Delegate {
+    
+    public func activationStatusChanged(canSend: Bool, canReceive: Bool) {
         
     }
     
-    public func sessionDidDeactivate(_ session: WCSession) {
+    public func reachabilityChanged(reachable: Bool) {
         
     }
+    
+    public func session(didReceiveMessage message: [String : Any]) {
+        if let command = IntercomCommand(message: message) {
+            perform(command: command)
+        }
+    }
+    
+    public func session(didReceiveMessage message: [String : Any], replyHandler: @escaping ([String : Any]) -> Void) {
+        if let command = IntercomCommand(message: message) {
+            perform(command: command)
+            replyHandler([:])
+        }
+    }
+    
+    public func session(didReceiveApplicationContext applicationContext: [String : Any]) {
+        
+        DispatchQueue.main.async {
+            self.receivedContext = try? self.decode(context: applicationContext)
+        }
+    }
+    
 }

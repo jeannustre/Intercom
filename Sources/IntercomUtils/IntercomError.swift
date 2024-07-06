@@ -10,4 +10,5 @@ import Foundation
 public enum IntercomError: Error {
     case sessionNotActivated
     case noContextInUserInfoDictionary
+    case unsupportedCommand
 }

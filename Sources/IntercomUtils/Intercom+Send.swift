@@ -7,7 +7,7 @@
 
 import Foundation
 
-public extension Intercom {
+public extension IntercomSession {
     
     func send<T:Encodable>(context: T) throws {
         guard session.activationState == .activated else { throw IntercomError.sessionNotActivated }

@@ -10,4 +10,5 @@ import Foundation
 public enum IntercomKey: String {
     case context = "ctx"
     case command = "cmd"
+    case messageType = "typ"
 }
