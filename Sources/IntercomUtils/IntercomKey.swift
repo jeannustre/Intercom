@@ -8,5 +8,6 @@
 import Foundation
 
 public enum IntercomKey: String {
-    case context = "c"
+    case context = "ctx"
+    case command = "cmd"
 }

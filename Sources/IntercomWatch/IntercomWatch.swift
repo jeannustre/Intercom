@@ -68,12 +68,38 @@ public class IntercomWatch<T: IntercomContext>: NSObject, ObservableObject, WCSe
     }
     
     public func session(_ session: WCSession, didReceiveMessage message: [String : Any]) {
-        print("received message: \(message.debugDescription)")
-      
+        print("received message with no awaited response: \(message.debugDescription)")
+        if let command = tryParsingCommand(message: message) {
+            perform(command: command)
+        }
+    }
+    
+    public func session(_ session: WCSession, didReceiveMessage message: [String : Any], replyHandler: @escaping ([String : Any]) -> Void) {
+        print("received messagewith awaited response: \(message.debugDescription)")
+        if let command = tryParsingCommand(message: message) {
+            perform(command: command)
+        }
+    }
+    
+    private func tryParsingCommand(message: [String:Any]) -> IntercomCommand? {
+        guard let rawValue = message[IntercomKey.command.rawValue] as? String else { return nil }
+        return IntercomCommand(rawValue: rawValue)
+    }
+    
+    private func perform(command: IntercomCommand) {
+        switch command {
+        case .playSuccess:
+            WKInterfaceDevice.current().play(.success)
+            print("BZZZ")
+        }
     }
     
     public func session(_ session: WCSession, didReceiveMessageData messageData: Data) {
-        print("received message data: \(String(data: messageData, encoding: .utf8) ?? "nil")")
+        guard let message = String(data: messageData, encoding: .utf8) else {
+            //TODO: exception "empty message" ?
+            return
+        }
+        print("Unhandled message data: \(message)")
     }
     
     public func session(_ session: WCSession, didReceiveUserInfo userInfo: [String : Any] = [:]) {
