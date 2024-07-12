@@ -20,7 +20,7 @@ import Foundation
 
 public protocol Command {
     func name() -> String
-    func parameters() -> [String:Any]
+    func parameters() -> [String:Any]?
     init?(message: [String:Any])
 }
 
@@ -28,9 +28,9 @@ public enum IntercomCommand: Command {
        
     case playSuccess
     case requestContextUpdate
-    case custom(name: String, parameters: [String:Any])
+    case custom(name: String, parameters: [String:Any]? = nil)
     
-    public init?(name: String, parameters: [String:Any]) {
+    public init?(name: String, parameters: [String:Any]? = nil) {
         switch name {
         case "play_success":
             self = .playSuccess
@@ -58,7 +58,7 @@ public enum IntercomCommand: Command {
         }
     }
     
-    public func parameters() -> [String : Any] {
+    public func parameters() -> [String : Any]? {
         switch self {
         case .custom(_, let parameters):
             return parameters

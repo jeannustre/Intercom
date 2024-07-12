@@ -7,7 +7,7 @@
 
 import Foundation
 
-public extension IntercomSession {
+public extension Intercom {
     
     func send<T:Encodable>(context: T) throws {
         guard session.activationState == .activated else { throw IntercomError.sessionNotActivated }
@@ -30,14 +30,18 @@ public extension IntercomSession {
         do {
             try session.sendMessage(
                 [
-                    IntercomKey.command.rawValue: command.name(),
-                    IntercomKey.parameters.rawValue: command.parameters()
+                    IntercomKey.command.rawValue: command.name()
+                    //IntercomKey.parameters.rawValue: command.parameters()
                 ],
                 replyHandler: { response in
-                    replyHandler?(response)
+                    DispatchQueue.main.async {
+                        replyHandler?(response)
+                    }
                 },
                 errorHandler: { error in
-                    errorHandler?(error)
+                    DispatchQueue.main.async {
+                        errorHandler?(error)
+                    }
                 }
             )
         } catch {
