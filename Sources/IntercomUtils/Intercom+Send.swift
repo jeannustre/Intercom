@@ -27,26 +27,21 @@ public extension Intercom {
         guard session.activationState == .activated else {
             throw IntercomError.sessionNotActivated
         }
-        do {
-            try session.sendMessage(
-                [
-                    IntercomKey.command.rawValue: command.name()
-                    //IntercomKey.parameters.rawValue: command.parameters()
-                ],
-                replyHandler: { response in
-                    DispatchQueue.main.async {
-                        replyHandler?(response)
-                    }
-                },
-                errorHandler: { error in
-                    DispatchQueue.main.async {
-                        errorHandler?(error)
-                    }
+        session.sendMessage(
+            [
+                IntercomKey.command.rawValue: command.name(),
+                IntercomKey.parameters.rawValue: command.parameters() as Any
+            ],
+            replyHandler: { response in
+                DispatchQueue.main.async {
+                    replyHandler?(response)
                 }
-            )
-        } catch {
-            print(error)
-        }
-        
+            },
+            errorHandler: { error in
+                DispatchQueue.main.async {
+                    errorHandler?(error)
+                }
+            }
+        )
     }
 }
