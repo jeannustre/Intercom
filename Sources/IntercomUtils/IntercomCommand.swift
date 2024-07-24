@@ -20,7 +20,7 @@ import Foundation
 
 public protocol Command {
     func name() -> String
-    func parameters() -> [String:Any]?
+    func parameters() -> [String:String]?
     init?(message: [String:Any])
 }
 
@@ -28,9 +28,9 @@ public enum IntercomCommand: Command {
        
     case playSuccess
     case requestContextUpdate
-    case custom(name: String, parameters: [String:Any]? = nil)
+    case custom(name: String, parameters: [String:String]? = nil)
     
-    public init?(name: String, parameters: [String:Any]? = nil) {
+    public init?(name: String, parameters: [String:String]? = nil) {
         switch name {
         case "play_success":
             self = .playSuccess
@@ -43,8 +43,12 @@ public enum IntercomCommand: Command {
     
     public init?(message: [String:Any]) {
         guard let value = message[IntercomKey.command.rawValue] as? String else { return nil }
-        let parameters = message[IntercomKey.parameters.rawValue] as? [String:Any] ?? [:]
-        self.init(name: value, parameters: parameters)
+        if let encodedParameters = message[IntercomKey.parameters.rawValue] as? Data,
+           let parameters = try? JSONDecoder().decode([String:String].self, from: encodedParameters) {
+            self.init(name: value, parameters: parameters)
+        } else {
+            self.init(name: value, parameters: nil)
+        }
     }
     
     public func name() -> String {
@@ -58,7 +62,7 @@ public enum IntercomCommand: Command {
         }
     }
     
-    public func parameters() -> [String : Any]? {
+    public func parameters() -> [String : String]? {
         switch self {
         case .custom(_, let parameters):
             return parameters

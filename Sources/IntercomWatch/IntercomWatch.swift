@@ -22,6 +22,10 @@ public class IntercomWatch<T: IntercomContext>: NSObject, ObservableObject, WCSe
         super.init()
     }
     
+    deinit {
+        print()
+    }
+    
     public func activate() {
         DispatchQueue.main.async { [weak self] in
             guard WCSession.isSupported() else {

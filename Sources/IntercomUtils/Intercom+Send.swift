@@ -27,11 +27,17 @@ public extension Intercom {
         guard session.activationState == .activated else {
             throw IntercomError.sessionNotActivated
         }
+        
+        var message: [String:Any] = [
+            IntercomKey.command.rawValue: command.name()
+        ]
+        if let parameters = command.parameters(),
+           let encodedParameters = try? JSONEncoder().encode(parameters) {
+            message[IntercomKey.parameters.rawValue] = encodedParameters
+        }
+        
         session.sendMessage(
-            [
-                IntercomKey.command.rawValue: command.name(),
-                IntercomKey.parameters.rawValue: command.parameters() as Any
-            ],
+            message,
             replyHandler: { response in
                 DispatchQueue.main.async {
                     replyHandler?(response)
