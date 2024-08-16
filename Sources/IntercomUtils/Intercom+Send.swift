@@ -18,9 +18,9 @@ public extension Intercom {
     func send<T:Encodable>(message: T, replyHandler: ((Data)->Void)? = nil, errorHandler: ((Error)->Void)? = nil) throws {
         guard session.activationState == .activated else { throw IntercomError.sessionNotActivated }
         let encoded = try encoder.encode(message)
-        try session.sendMessageData(encoded,
-                                    replyHandler: replyHandler,
-                                    errorHandler: errorHandler)
+        session.sendMessageData(encoded,
+                                replyHandler: replyHandler,
+                                errorHandler: errorHandler)
     }
     
     func send(command: IntercomCommand, replyHandler: (([String:Any])->Void)? = nil, errorHandler: ((any Error)->Void)? = nil) throws {

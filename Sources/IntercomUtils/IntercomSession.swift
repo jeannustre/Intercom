@@ -41,6 +41,9 @@ public class IntercomSession: NSObject, WCSessionDelegate {
         case .notActivated:
             canSend = false
             canReceive = false
+        @unknown default:
+            canSend = true
+            canReceive = true
         }
         reachable = session.isReachable
         delegate?.activationStatusChanged(canSend: canSend, canReceive: canReceive)

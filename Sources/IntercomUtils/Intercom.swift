@@ -11,6 +11,7 @@ public protocol Intercom {
     var encoder: JSONEncoder { get set }
     var decoder: JSONDecoder { get set }
     var session: WCSession { get }
+    var delegate: IntercomDelegate? { get set }
     
     func perform(command: IntercomCommand) -> [String:Any]?
     func send<T:Encodable>(context: T) throws

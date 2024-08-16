@@ -12,25 +12,20 @@ import UIKit
 
 public class IntercomPhone<T: IntercomContext>: NSObject, ObservableObject, WCSessionDelegate, Intercom {
     
+    public typealias CommandHandler = ([String:Any]?) -> [String:Any]
+    
     @Published public var receivedContext: T?
     @Published public var reachable: Bool = false
     
-    public var sessionActivated: Bool = false
     public var encoder: JSONEncoder = JSONEncoder()
     public var decoder: JSONDecoder = JSONDecoder()
-//    public var session: IntercomSession = IntercomSession()
     public let session: WCSession = .default
     public var canSend: Bool = false
     public var canReceive: Bool = false
+    public weak var delegate: IntercomDelegate?
     
-    public typealias CommandHandler = ([String:Any]?) -> [String:Any]
-    
-    var commandHandlers: [String:CommandHandler] = [:]
-    
-//    public init() {
-        
-//    }
-    
+    private var commandHandlers: [String:CommandHandler] = [:]
+
     public func registerCommandHandler(name: String, handler: @escaping CommandHandler) {
         commandHandlers[name] = handler
     }
@@ -48,9 +43,12 @@ public class IntercomPhone<T: IntercomContext>: NSObject, ObservableObject, WCSe
         switch command {
         case .playSuccess:
             break
-//            feedbackGenerator.notificationOccurred(.success)
         case .requestContextUpdate:
             break //TODO: should gather and re-send context from here
+        case .analytic(let event, let parameters):
+            if let handler = commandHandlers[event] {
+                return handler(parameters)
+            }
         case .custom(let name, let parameters):
             if let handler = commandHandlers[name] {
                 return handler(parameters)
@@ -59,14 +57,6 @@ public class IntercomPhone<T: IntercomContext>: NSObject, ObservableObject, WCSe
         return [:]
     }
     
-//    public func send<E>(context: E) throws where E : Encodable {
-//        try session.send(context: context)
-//    }
-//    
-//    public func send(command: IntercomUtils.IntercomCommand, replyHandler: (([String : Any]) -> Void)? = nil, errorHandler: ((any Error) -> Void)? = nil) throws {
-//        try session.send(command: command, replyHandler: replyHandler, errorHandler: errorHandler)
-//    }
-//    
     public func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: (any Error)?) {
         switch activationState {
         case .activated:
@@ -78,10 +68,12 @@ public class IntercomPhone<T: IntercomContext>: NSObject, ObservableObject, WCSe
         case .notActivated:
             canSend = false
             canReceive = false
+        @unknown default:
+            canSend = true
+            canReceive = true
         }
         reachable = session.isReachable
-//        delegate?.activationStatusChanged(canSend: canSend, canReceive: canReceive)
-//        delegate?.session(didReceiveApplicationContext: session.receivedApplicationContext)
+        delegate?.sessionActivated(isPaired: session.isPaired)
     }
 
     #if os(iOS)
@@ -89,13 +81,11 @@ public class IntercomPhone<T: IntercomContext>: NSObject, ObservableObject, WCSe
     public func sessionDidBecomeInactive(_ session: WCSession) {
         canSend = false
         canReceive = true
-//        delegate?.activationStatusChanged(canSend: canSend, canReceive: canReceive)
     }
 
     public func sessionDidDeactivate(_ session: WCSession) {
         canSend = false
         canReceive = false
-//        delegate?.activationStatusChanged(canSend: canSend, canReceive: canReceive)
     }
 
     #endif
@@ -103,11 +93,14 @@ public class IntercomPhone<T: IntercomContext>: NSObject, ObservableObject, WCSe
     //MARK: - Receiving Messages
 
     public func session(_ session: WCSession, didReceiveMessage message: [String : Any]) {
-        print()
+        guard let command = IntercomCommand(message: message) else {
+            return
+        }
+        _ = perform(command: command)
     }
     
     public func session(_ session: WCSession, didReceiveMessageData messageData: Data) {
-        print()
+        print("IntercomPhone: didReceiveMessageData called, but not implemented")
     }
     
     public func session(_ session: WCSession, didReceiveMessage message: [String : Any], replyHandler: @escaping ([String : Any]) -> Void) {
@@ -126,16 +119,6 @@ public class IntercomPhone<T: IntercomContext>: NSObject, ObservableObject, WCSe
         })
         
     }
-    
-//    public func session(_ session: WCSession, didReceiveMessage message: [String : Any], replyHandler: @escaping ([String : Any]) -> Void) {
-//        print()
-////        delegate?.session(didReceiveMessage: message, replyHandler: replyHandler)
-//    }
-//
-//    public func session(_ session: WCSession, didReceiveMessage message: [String : Any]) {
-//        print()
-////        delegate?.session(didReceiveMessage: message)
-//    }
 
     //MARK: - Receiving Context
 

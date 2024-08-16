@@ -8,22 +8,17 @@ public class IntercomWatch<T: IntercomContext>: NSObject, ObservableObject, WCSe
         
     @Published public var receivedContext: T?
     @Published public var reachable: Bool = false
+    
     public var deviceContext: T?
-//    public var activated: Bool = false
     public var encoder: JSONEncoder = JSONEncoder()
     public var decoder: JSONDecoder = JSONDecoder()
     public var canSend: Bool = false
     public var canReceive: Bool = false
-    
-//    public var session: IntercomSession = IntercomSession()
+    public weak var delegate: IntercomDelegate?
     
     public init(session: WCSession = .default) {
         self.session = session
         super.init()
-    }
-    
-    deinit {
-        print()
     }
     
     public func activate() {
@@ -48,6 +43,8 @@ public class IntercomWatch<T: IntercomContext>: NSObject, ObservableObject, WCSe
             break
         case IntercomCommand.custom(let name, let parameters):
             print("Received custom command: \(name), \(parameters)")
+        case IntercomCommand.analytic(let event, let parameters):
+            print("Received analytic event: \(event), \(parameters) but this is watchOS so why ?")
         }
         return nil
     }
@@ -95,34 +92,3 @@ public class IntercomWatch<T: IntercomContext>: NSObject, ObservableObject, WCSe
     }
 
 }
-
-
-//extension IntercomWatch: IntercomSession.Delegate {
-//    
-//    public func activationStatusChanged(canSend: Bool, canReceive: Bool) {
-//        
-//    }
-//    
-//    public func reachabilityChanged(reachable: Bool) {
-//        
-//    }
-//    
-//    public func session(didReceiveMessage message: [String : Any]) {
-//        if let command = IntercomCommand(message: message) {
-//            perform(command: command)
-//        }
-//    }
-//    
-//    public func session(didReceiveMessage message: [String : Any], replyHandler: @escaping ([String : Any]) -> Void) {
-//        if let command = IntercomCommand(message: message) {
-//            perform(command: command)
-//        }
-//    }
-//    
-//    public func session(didReceiveApplicationContext applicationContext: [String : Any]) {
-//        DispatchQueue.main.async {
-//            self.receivedContext = try? self.decode(context: applicationContext)
-//        }
-//    }
-//    
-//}
